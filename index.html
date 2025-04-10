@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator & Scanner</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/qrcode.min.js"></script>
+    <script src="https://unpkg.com/jsqr/dist/jsQR.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔳 QR Code Generator & Scanner</h1>
+        
+        <!-- Tab Links -->
+        <div class="tabs">
+            <button class="tab-button" onclick="showTab('generate')">Generate QR Code</button>
+            <button class="tab-button" onclick="showTab('scan')">Scan QR Code</button>
+        </div>
+        
+        <!-- Generate QR Code Section -->
+        <div id="generate" class="tab-content">
+            <h2>Generate QR Code</h2>
+            <input type="text" id="generate-input" placeholder="Enter data to encode" />
+            <button onclick="generateQRCode()">Generate QR Code</button>
+            <br>
+            <canvas id="qr-code" style="margin-top: 20px;"></canvas>
+            <br>
+            <a id="download-link" href="#" download="qrcode.png" style="display: none;">Download QR Code</a>
+        </div>
+        
+        <!-- Scan QR Code Section -->
+        <div id="scan" class="tab-content" style="display: none;">
+            <h2>Scan QR Code from Image</h2>
+            <input type="file" id="upload" accept="image/*" onchange="scanQRCode()" />
+            <br>
+            <canvas id="scan-canvas" style="margin-top: 20px;"></canvas>
+            <p id="scan-result" style="margin-top: 20px;"></p>
+        </div>
+    </div>
+
+    <script>
+        // Show the selected tab
+        function showTab(tabName) {
+            const generateTab = document.getElementById("generate");
+            const scanTab = document.getElementById("scan");
+
+            if (tabName === 'generate') {
+                generateTab.style.display = 'block';
+                scanTab.style.display = 'none';
+            } else {
+                generateTab.style.display = 'none';
+                scanTab.style.display = 'block';
+            }
+        }
+
+        // QR Code Generation
+        function generateQRCode() {
+            const data = document.getElementById("generate-input").value;
+            const qrCanvas = document.getElementById("qr-code");
+            const downloadLink = document.getElementById("download-link");
+
+            if (data.trim() === "") {
+                alert("Please enter some data!");
+                return;
+            }
+
+            qrcode.toCanvas(qrCanvas, data, function (error) {
+                if (error) {
+                    console.error(error);
+                    alert("Something went wrong!");
+                    return;
+                }
+                downloadLink.style.display = 'inline';
+                downloadLink.href = qrCanvas.toDataURL();
+            });
+        }
+
+        // QR Code Scanning
+        function scanQRCode() {
+            const file = document.getElementById("upload").files[0];
+            if (!file) {
+                alert("Please upload an image.");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const img = new Image();
+                img.onload = function () {
+                    const canvas = document.getElementById("scan-canvas");
+                    const ctx = canvas.getContext("2d");
+
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(imageData.data, canvas.width, canvas.height);
+
+                    const resultElement = document.getElementById("scan-result");
+                    if (code) {
+                        resultElement.textContent = `Decoded Data: ${code.data}`;
+                    } else {
+                        resultElement.textContent = "No QR Code found.";
+                    }
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Default to the 'Generate' tab
+        showTab('generate');
+    </script>
+</body>
+
+</html>
